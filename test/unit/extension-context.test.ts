@@ -1,6 +1,22 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { withCachedUiContext } from "../../src/shared/extension-context.ts";
+import { canRenderComponents, withCachedUiContext } from "../../src/shared/extension-context.ts";
+
+describe("component UI support", () => {
+	it("trusts every TUI host", () => {
+		assert.equal(canRenderComponents({ mode: "tui", ui: {} } as never), true);
+	});
+
+	it("rejects the zero-arity RPC no-op stub", () => {
+		const stub = async () => undefined;
+		assert.equal(canRenderComponents({ mode: "rpc", ui: { custom: stub } } as never), false);
+	});
+
+	it("accepts an RPC host that implements the custom-UI contract", () => {
+		const real = (_factory: unknown, _options?: unknown) => Promise.resolve(undefined);
+		assert.equal(canRenderComponents({ mode: "rpc", ui: { custom: real } } as never), true);
+	});
+});
 
 describe("cached extension UI context", () => {
 	it("clears a context replaced by session reload and returns no UI result", () => {
