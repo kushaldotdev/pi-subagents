@@ -16,12 +16,10 @@ export function isStaleExtensionContextError(error: unknown): boolean {
 
 /**
  * Whether the host can render a `ctx.ui.custom()` component. Stock Pi RPC defines `custom` as a
- * zero-arity no-op stub, but a host that implements the custom-UI contract itself still binds as
- * mode "rpc" (pi-web does), so arity separates a real implementation from the stub.
+ * no-op stub, so a non-TUI host must declare that it implements the custom-UI contract itself.
  */
 export function canRenderComponents(ctx: ExtensionContext): boolean {
-	if (ctx.mode === "tui") return true;
-	return typeof ctx.ui.custom === "function" && ctx.ui.custom.length >= 1;
+	return ctx.mode === "tui" || process.env.PI_SUBAGENTS_COMPONENT_UI === "1";
 }
 
 /** Pi throws this from action methods while extensions are still loading, before it binds the runtime. */

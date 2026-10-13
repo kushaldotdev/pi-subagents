@@ -3,18 +3,19 @@ import { describe, it } from "node:test";
 import { canRenderComponents, withCachedUiContext } from "../../src/shared/extension-context.ts";
 
 describe("component UI support", () => {
-	it("trusts every TUI host", () => {
-		assert.equal(canRenderComponents({ mode: "tui", ui: {} } as never), true);
-	});
-
-	it("rejects the zero-arity RPC no-op stub", () => {
-		const stub = async () => undefined;
-		assert.equal(canRenderComponents({ mode: "rpc", ui: { custom: stub } } as never), false);
-	});
-
-	it("accepts an RPC host that implements the custom-UI contract", () => {
-		const real = (_factory: unknown, _options?: unknown) => Promise.resolve(undefined);
-		assert.equal(canRenderComponents({ mode: "rpc", ui: { custom: real } } as never), true);
+	it("renders in the TUI, and over RPC only when the host sets PI_SUBAGENTS_COMPONENT_UI=1", () => {
+		const previous = process.env.PI_SUBAGENTS_COMPONENT_UI;
+		const custom = (_factory: unknown, _options?: unknown) => Promise.resolve(undefined);
+		try {
+			delete process.env.PI_SUBAGENTS_COMPONENT_UI;
+			assert.equal(canRenderComponents({ mode: "tui", ui: { custom } } as never), true);
+			assert.equal(canRenderComponents({ mode: "rpc", ui: { custom } } as never), false);
+			process.env.PI_SUBAGENTS_COMPONENT_UI = "1";
+			assert.equal(canRenderComponents({ mode: "rpc", ui: { custom } } as never), true);
+		} finally {
+			if (previous === undefined) delete process.env.PI_SUBAGENTS_COMPONENT_UI;
+			else process.env.PI_SUBAGENTS_COMPONENT_UI = previous;
+		}
 	});
 });
 
